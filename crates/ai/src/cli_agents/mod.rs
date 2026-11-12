@@ -365,6 +365,70 @@ pub fn build_args(
     adapter.args(&ArgsCx { options: opts, prompt: &prompt, preamble, mcp, resume, builder, reads_checked, question })
 }
 
+/// CreateProcessW takes the whole command line as one UTF-16 string capped at 32,767 units; past
+/// it the spawn dies as os error 206, which reads to everyone like the agent itself crashed
+/// (#402, #528). We measure the line ourselves so a person gets words, not a cryptic exit.
+pub(crate) const CMDLINE_LIMIT: usize = 32_767;
+/// The margin kept under the limit for the program's own quoting and anything the OS adds.
+pub(crate) const CMDLINE_HEADROOM: usize = 512;
+
+/// The length std hands the OS, in UTF-16 code units, under std's own quoting rule: an empty
+/// argument or one holding whitespace or a quote arrives wrapped, and its quotes come back
+/// escaped — each of which costs a unit too.
+fn cmdline_len(program: &str, args: &[String]) -> usize {
+    fn units(s: &str) -> usize {
+        s.encode_utf16().count()
+    }
+    let mut total = units(program);
+    for a in args {
+        let quoted = a.is_empty() || a.contains([' ', '\t', '"']);
+        total += 1 + units(a) + usize::from(quoted) * 2 + a.matches('"').count();
+    }
+    total
+}
+
+/// Refuse, in the person's words, a message the computer could not start the agent with. Covers
+/// the SSH form too: it folds the remote command into one local argument before we measure.
+pub(crate) fn argv_budget(program: &str, args: &[String]) -> Result<(), (String, String)> {
+    let len = cmdline_len(program, args);
+    if len + CMDLINE_HEADROOM <= CMDLINE_LIMIT {
+        return Ok(());
+    }
+    Err((
+        format!("That message is too long for your computer to start {program} with: it needs {len} of the {} characters a command line can hold.", CMDLINE_LIMIT),
+        "Send a shorter message, or let the details come from a file in the project instead of from the message.".to_string(),
+    ))
+}
+
+#[cfg(test)]
+mod cmdline_tests {
+    use super::*;
+
+    #[test]
+    fn ordinary_messages_pass_and_the_builder_task_book_is_no_risk() {
+        assert!(argv_budget("hermes", &["-z".into(), "make a game".into()]).is_ok());
+        // A real task book measured ~7.5k characters; it must stay nowhere near the wall.
+        assert!(argv_budget("hermes", &["-m".into(), "qwen".into(), "-z".into(), "字".repeat(7_500)]).is_ok());
+    }
+
+    #[test]
+    fn a_message_past_the_command_line_is_refused_in_words_not_error_206() {
+        // CJK counts one UTF-16 unit each but three bytes each — the wall is in units, not bytes.
+        let (message, _) = argv_budget("hermes", &["-z".into(), "字".repeat(CMDLINE_LIMIT)]).unwrap_err();
+        assert!(message.contains("too long"), "{message}");
+        assert!(argv_budget("hermes", &["-z".into(), "x".repeat(CMDLINE_LIMIT)]).is_err());
+        // Quoting and escaping grow the line: bare quotes cost a wrapping pair plus one escape each.
+        let near = "\"".repeat((CMDLINE_LIMIT - CMDLINE_HEADROOM) / 2);
+        assert!(argv_budget("h", &["-z".into(), near]).is_err(), "escaped quotes must count");
+    }
+
+    #[test]
+    fn empty_arguments_still_cost_their_quotes() {
+        let many = vec![String::new(); CMDLINE_LIMIT / 3];
+        assert!(argv_budget("h", &many).is_err());
+    }
+}
+
 /// What a run may do with files: a question reads only, a builder builds, anything else analyses;
 /// Deep mode or not decides whether the original is in reach (#564).
 fn access_for(builder: bool, deep: bool, question: bool) -> Access {
@@ -1024,6 +1088,12 @@ fn run_cli(spec: &CliSpec, text: &str, retry: bool, tx: &Sender<AgentEvent>, sto
         Some(host) => ("ssh".to_string(), crate::ssh::ssh_line_args(host, remote_command(&program, args, &env))),
         None => (program.clone(), args),
     };
+    // Measure before the ask, on the one path local and SSH runs now share: past Windows' command
+    // line the spawn dies as os error 206 and everyone reads that as the agent having crashed.
+    if let Err((message, remediation)) = argv_budget(&prog, &argv) {
+        let _ = tx.send(AgentEvent::Error { message, remediation: Some(remediation), log: None });
+        return nothing_done(&name);
+    }
     let _ =
         tx.send(AgentEvent::Status { text: format!("Asking {}{}…", display_for(&agent), remote.as_ref().map(|h| format!(" on {h}")).unwrap_or_default()) });
     // Sessions earlier turns left behind when Craft Anything was killed mid-turn (#1115). Off this
