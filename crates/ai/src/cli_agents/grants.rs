@@ -76,7 +76,10 @@ const DECLARED: &[Declared] = &[
     Declared { id: "opencode", path: Path::Argv, tool_server: Given::Yes, approvals: Given::No, mid_turn_notes: Given::No },
     // Run with `--dangerously-skip-permissions`, and nothing hands it our server.
     Declared { id: "antigravity", path: Path::Argv, tool_server: Given::No, approvals: Given::No, mid_turn_notes: Given::No },
-    Declared { id: "hermes", path: Path::Argv, tool_server: Given::No, approvals: Given::No, mid_turn_notes: Given::No },
+    // ACP since 2026-11: the session carries the message, progress, cancel and approvals; the
+    // `-z` path stays only as the shape verify_flags confirmed. Model and effort land as
+    // session config options measured against the real agent (`hermes acp` takes no `-m`).
+    Declared { id: "hermes", path: Path::Acp, tool_server: Given::Yes, approvals: Given::Yes, mid_turn_notes: Given::No },
     // Nothing can ask in `-p`, so its changing tools are switched off outside a build instead.
     Declared { id: "maki", path: Path::Argv, tool_server: Given::No, approvals: Given::No, mid_turn_notes: Given::No },
     Declared { id: "aider", path: Path::Argv, tool_server: Given::No, approvals: Given::No, mid_turn_notes: Given::No },
