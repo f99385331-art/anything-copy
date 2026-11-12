@@ -1,12 +1,12 @@
 //! The person's installed Grok Build CLI, driven over ACP (`grok agent stdio`). Sign-in stays in
-//! `grok login`. Craft Anything checks that an auth file exists and does not read it.
+//! `grok login`. Anything Copy checks that an auth file exists and does not read it.
 
 use super::*;
 use std::ffi::OsStr;
 use std::path::{Path, PathBuf};
 
 /// Grok Build's ACP-only adapter. `acp = false` or an SSH host fails closed: the plain runner
-/// would open the interactive TUI, which has no approval channel back to Craft Anything.
+/// would open the interactive TUI, which has no approval channel back to Anything Copy.
 pub struct Grok;
 
 impl AgentAdapter for Grok {
@@ -92,7 +92,7 @@ impl AgentAdapter for Grok {
         if options.args.is_empty() {
             Ok(())
         } else {
-            Err(ToolError::invalid("Extra Grok arguments could bypass Craft Anything's approval checks.")
+            Err(ToolError::invalid("Extra Grok arguments could bypass Anything Copy's approval checks.")
                 .with_remediation("Remove this backend's extra arguments. Set its program, model and thinking through the backend options instead."))
         }
     }
@@ -146,7 +146,7 @@ impl AgentAdapter for Grok {
     }
 
     fn sign_in_fix(&self) -> Option<String> {
-        Some("Sign in with `grok login` in a terminal, then try again. Grok keeps the sign-in; Craft Anything never sees it.".into())
+        Some("Sign in with `grok login` in a terminal, then try again. Grok keeps the sign-in; Anything Copy never sees it.".into())
     }
 
     fn signed_in(&self, _program: &str) -> Option<bool> {

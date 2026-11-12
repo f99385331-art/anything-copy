@@ -3282,7 +3282,7 @@ fn a_resumed_game_builder_hears_the_asset_choice_as_it_is_now() {
 fn a_resumed_api_builder_waits_for_the_runs_check() {
     let app = kind("app");
     for prompt in [super::follow_up("bigger title", app.as_ref(), true), continue_prompt(app.as_ref(), true)] {
-        assert!(prompt.contains("Craft Anything checks your build after your turn"), "{prompt}");
+        assert!(prompt.contains("Anything Copy checks your build after your turn"), "{prompt}");
         assert!(!prompt.contains("rebuild_check"), "{prompt}");
     }
 }
@@ -4339,7 +4339,7 @@ fn the_builders_conversation_travels_with_the_project() {
     let handoff = crate::cli_agents::AgentAdapter::handoff(&adapter, &kept_session(&ws).unwrap(), HANDOFF_CHARS);
     let first = resumed_elsewhere("THE BRIEF", "Last summary.", handoff.as_deref());
     assert!(first.starts_with("THE BRIEF") && first.contains("isn't on this computer"), "{first}");
-    assert!(first.contains("Craft Anything asked you: Make a notes app.") && first.contains("You answered: Built it with a sidebar."), "{first}");
+    assert!(first.contains("Anything Copy asked you: Make a notes app.") && first.contains("You answered: Built it with a sidebar."), "{first}");
     // Without a kept conversation, the last summary stands in for it.
     let bare = resumed_elsewhere("THE BRIEF", "Last summary.", None);
     assert!(bare.contains("Last summary.") && !bare.contains("as the project kept it"), "{bare}");

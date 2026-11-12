@@ -231,7 +231,7 @@ fn deep_mode_without_ghidra_asks_to_get_it_before_using_it() {
     h.run_steps(3);
     // An app or a game offers Clean room or Deep right on the Make screen; picking Deep offers
     // Ghidra instead of quietly going without it.
-    h.get_by_label("How closely may Craft Anything look at it?");
+    h.get_by_label("How closely may Anything Copy look at it?");
     h.get_by_label("Deep").click();
     h.run_steps(3);
     assert_eq!(h.state().state.modal, Some(Modal::Ghidra));
@@ -795,7 +795,7 @@ fn an_approval_that_cant_be_saved_isnt_shown_as_chosen() {
         a
     });
     h.run_steps(2);
-    // A newer Craft Anything saved it meanwhile: this one only reads it, so the choice is refused.
+    // A newer Anything Copy saved it meanwhile: this one only reads it, so the choice is refused.
     let current = craft_anything_engine::workspace::MANIFEST_VERSION;
     let newer = std::fs::read_to_string(&file).unwrap().replacen(&format!("\"version\": {current}"), &format!("\"version\": {}", current + 1), 1);
     assert!(newer.contains(&format!("\"version\": {}", current + 1)));
@@ -897,12 +897,12 @@ fn website_choice_stays_picked_while_the_address_is_empty() {
         assert!(h.state().state.make.editing_url);
         h.get_by_label("Type the website's address:");
         // A website is looked at as a visitor sees it, or read in Deep mode: asked.
-        h.get_by_label("How closely may Craft Anything look at it?");
+        h.get_by_label("How closely may Anything Copy look at it?");
     }
     h.get_by_label("Nothing — start fresh").click();
     h.run_steps(3);
     assert!(!h.state().state.make.editing_url);
-    assert!(h.query_by_label("How closely may Craft Anything look at it?").is_none(), "nothing to look at");
+    assert!(h.query_by_label("How closely may Anything Copy look at it?").is_none(), "nothing to look at");
     assert!(h.query_by_label("Type the website's address:").is_none());
 }
 

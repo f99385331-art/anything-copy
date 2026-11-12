@@ -146,7 +146,7 @@ fn overlay_yaml(mcp: &McpCommand) -> String {
     let q = |s: &str| format!("'{}'", s.replace('\'', "''"));
     let args: String = mcp.args.iter().map(|a| format!("\n          - {}", q(a))).collect();
     format!(
-        "# Craft Anything's tool server for this run. Generated; safe to delete.\n\
+        "# Anything Copy's tool server for this run. Generated; safe to delete.\n\
          - insert:\n    \
            - id: {OVERLAY_ID}\n      \
              name: '@deepseek-ai/dsh-mcp-client'\n      \

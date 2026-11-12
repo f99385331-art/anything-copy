@@ -281,13 +281,13 @@ impl McpCommand {
 /// that ran out of time says nothing about the program, so the build goes ahead. Stopping the
 /// build ends the check, as `ErrorCode::Cancelled`.
 pub fn cli_can_start(cli: Option<&Path>, stop: &CancelToken) -> Result<(), ToolError> {
-    const REINSTALL: &str = "Install the latest Craft Anything again: it keeps this helper next to the app. If you built the app yourself, run `cargo build -p craft-anything-cli` too.";
+    const REINSTALL: &str = "Install the latest Anything Copy again: it keeps this helper next to the app. If you built the app yourself, run `cargo build -p craft-anything-cli` too.";
     let Some(cli) = cli else {
-        return Err(ToolError::new(ErrorCode::EngineMissing, "Craft Anything's helper program (craft-anything-cli) is missing, so the builder can't start.")
+        return Err(ToolError::new(ErrorCode::EngineMissing, "Anything Copy's helper program (craft-anything-cli) is missing, so the builder can't start.")
             .with_remediation(REINSTALL));
     };
     let failed = |why: String| {
-        ToolError::new(ErrorCode::EngineMissing, format!("Craft Anything's helper program at {} wouldn't start: {why}", cli.display()))
+        ToolError::new(ErrorCode::EngineMissing, format!("Anything Copy's helper program at {} wouldn't start: {why}", cli.display()))
             .with_remediation(REINSTALL)
     };
     let stop = stop.clone();
@@ -525,7 +525,7 @@ pub(crate) fn claude_code_failure_in(why: &str, folder: Option<&Path>) -> (Strin
     (format!("Claude Code stopped: {why}"), sign_in_hint_in(why, adapters::in_flatpak(), folder))
 }
 
-/// Variables a Claude Code session sets for its own child processes. When Craft Anything itself
+/// Variables a Claude Code session sets for its own child processes. When Anything Copy itself
 /// runs inside such a session, they'd make the person's `claude` act as part of that session
 /// instead of as their own install, so they're removed. The person's own settings (provider
 /// choice `CLAUDE_CODE_USE_*`, `CLAUDE_CONFIG_DIR`, `ANTHROPIC_*`) are kept.
@@ -1096,7 +1096,7 @@ fn run_cli(spec: &CliSpec, text: &str, retry: bool, tx: &Sender<AgentEvent>, sto
     }
     let _ =
         tx.send(AgentEvent::Status { text: format!("Asking {}{}…", display_for(&agent), remote.as_ref().map(|h| format!(" on {h}")).unwrap_or_default()) });
-    // Sessions earlier turns left behind when Craft Anything was killed mid-turn (#1115). Off this
+    // Sessions earlier turns left behind when Anything Copy was killed mid-turn (#1115). Off this
     // thread: a delete over SSH may wait on a host that's away.
     let records = spec.logs.as_deref().map(unfinished::dir_in);
     if let Some(dir) = records.clone() {
@@ -1221,7 +1221,7 @@ fn run_cli(spec: &CliSpec, text: &str, retry: bool, tx: &Sender<AgentEvent>, sto
                 Ok(out) => (Some(out), None),
                 Err(e) => (None, Some(e.message.as_str())),
             };
-            if let Some(path) = shown.save_with(&agent, out, Some("Craft Anything's tools did not start."), error).0 {
+            if let Some(path) = shown.save_with(&agent, out, Some("Anything Copy's tools did not start."), error).0 {
                 let _ = tx.send(AgentEvent::Status { text: format!("The details are in {}", path.display()) });
             }
         }
@@ -2465,7 +2465,7 @@ mod tests {
         let all = adapters::claude_handoff(&saved, 10_000).unwrap();
         assert_eq!(
             all,
-            "Craft Anything asked you: Make a notes app.\n\nYou answered: Built a notes app with a sidebar.\n\nCraft Anything asked you: The person asks: \"make it blue\"\n\nYou answered: Made it blue."
+            "Anything Copy asked you: Make a notes app.\n\nYou answered: Built a notes app with a sidebar.\n\nAnything Copy asked you: The person asks: \"make it blue\"\n\nYou answered: Made it blue."
         );
         // Short of room, the newest is kept.
         let short = adapters::claude_handoff(&saved, 80).unwrap();

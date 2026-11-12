@@ -105,7 +105,7 @@ pub fn specs() -> Vec<ToolSpec> {
         ToolSpec {
             id: "rebuild_check",
             title: "Check my build",
-            summary: "For the builder: test the project's current build against the original now, with the same checks Craft Anything runs after each turn (a website's likeness at each width with the padding, colour, font and layout differences; an app's or game's picture against the original's; whether it builds; the mechanics sheet; credits). The project's running build answers it, so the builder can fix what it lists and check again before replying. Not counted as a round. project defaults to the project this tool server works for.",
+            summary: "For the builder: test the project's current build against the original now, with the same checks Anything Copy runs after each turn (a website's likeness at each width with the padding, colour, font and layout differences; an app's or game's picture against the original's; whether it builds; the mechanics sheet; credits). The project's running build answers it, so the builder can fix what it lists and check again before replying. Not counted as a round. project defaults to the project this tool server works for.",
             beginner: "Lets the builder test its work against the original while it builds.",
             toolset: Toolset::Core,
             effects: Effects::WRITES_FILESYSTEM,
@@ -499,7 +499,7 @@ fn rebuild_check(ctx: &mut Ctx<'_>, params: Value) -> Result<ToolOutput, ToolErr
     let ws = open(&project)?;
     if self_check::building_here(&ws.root) {
         return Err(ToolError::new(ErrorCode::FeatureMissing, "This builder can't check its own work while it builds.")
-            .with_remediation("Finish the turn: Craft Anything checks the build after it."));
+            .with_remediation("Finish the turn: Anything Copy checks the build after it."));
     }
     let asks = Inbox::new(self_check::asks_dir(&ws.root));
     let id = asks.post(craft_anything_engine::inbox::RequestKind::Question, "Check the build", "", Vec::new(), false, None)?;
@@ -527,7 +527,7 @@ fn unanswered(taken: bool, minutes: u64) -> ToolError {
             .with_remediation("A step of the check may be stuck (the project's feed says which step it's on). Don't ask again: finish the turn, and the build is checked after it, with a time limit.")
     } else {
         ToolError::new(ErrorCode::NotFound, format!("No build is running for this project: nothing took the check in {minutes} minutes."))
-            .with_remediation("Use this while Craft Anything is building the project; otherwise build it and finish the turn, and it is checked after.")
+            .with_remediation("Use this while Anything Copy is building the project; otherwise build it and finish the turn, and it is checked after.")
     }
 }
 

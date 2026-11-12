@@ -24,7 +24,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 pub static INTERRUPTED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug, Parser)]
-#[command(name = "craft-anything-cli", version, about = "Craft Anything on the command line: every tool, the MCP server, setup and doctor.")]
+#[command(name = "craft-anything-cli", version, about = "Anything Copy on the command line: every tool, the MCP server, setup and doctor.")]
 #[command(after_help = "Every tool is also a subcommand: `craft-anything-cli commands` lists them, `craft-anything-cli <tool> --help` shows its options.\n\
 When a tool has its own --format option (core-target-open, ...), --format after the tool name goes to the tool; pick the output with --output-format (or --format before the tool name). `report` has no format option of its own: use `report --html` for HTML.")]
 pub struct Cli {
@@ -68,18 +68,18 @@ pub enum Command {
         #[arg(long)]
         allow_capture: bool,
         /// A folder where questions and approvals for the person are posted (`core_person_ask`,
-        /// `core_action_approve`); the Craft Anything app answers them.
+        /// `core_action_approve`); the Anything Copy app answers them.
         #[arg(long)]
         inbox: Option<PathBuf>,
         /// Target metadata from the desktop (JSON); repeat for each target, active target last.
         #[arg(long = "target")]
         targets: Vec<String>,
     },
-    /// Connect Craft Anything to your coding-agent apps.
+    /// Connect Anything Copy to your coding-agent apps.
     Setup(setup_cmd::SetupArgs),
     /// Check the install, registrations, engines, AI backends and the MCP server.
     Doctor(setup_cmd::DoctorArgs),
-    /// Remove Craft Anything's registrations and skill from agent apps.
+    /// Remove Anything Copy's registrations and skill from agent apps.
     Uninstall(setup_cmd::UninstallArgs),
     /// List every tool.
     Commands,
@@ -232,7 +232,7 @@ pub fn call_options(cli: &Cli, cancel: &CancelToken) -> CallOptions<'static> {
     CallOptions::new(caller()).with_consent(consent).with_cancel(cancel.clone())
 }
 
-/// The person, unless a coding agent Craft Anything started is running this CLI (it then calls
+/// The person, unless a coding agent Anything Copy started is running this CLI (it then calls
 /// tools as an agent, which can't loosen a project's approvals).
 fn caller() -> Caller {
     if std::env::var_os(craft_anything_engine::AGENT_ENV).is_some() { Caller::Agent } else { Caller::Cli }

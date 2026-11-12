@@ -29,7 +29,7 @@ impl Given {
 /// What one adapter's builder gets.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Grants {
-    /// The builder can call Craft Anything's tools.
+    /// The builder can call Anything Copy's tools.
     pub tool_server: Given,
     /// A change it wants to make is decided by our approval policy (the person, or Auto mode)
     /// rather than by the agent alone.

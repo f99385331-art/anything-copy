@@ -502,9 +502,9 @@ impl AgentAdapter for ClaudeCode {
                     p.failure = Some(TurnFailure::new(FailureKind::ToolsUnavailable));
                     let status = server.get("status").and_then(Value::as_str).unwrap_or_default();
                     out.push(AgentEvent::Error {
-                        message: format!("Craft Anything's tools did not start in Claude Code (server status: {status})."),
+                        message: format!("Anything Copy's tools did not start in Claude Code (server status: {status})."),
                         remediation: Some(
-                            "Check the Craft Anything CLI and the agent failure log, then start a new build attempt after fixing the tool connection.".into(),
+                            "Check the Anything Copy CLI and the agent failure log, then start a new build attempt after fixing the tool connection.".into(),
                         ),
                         log: None,
                     });
@@ -730,7 +730,7 @@ pub fn claude_names_account(file: &std::path::Path) -> bool {
 /// Longest single request or reply in a handoff; a first brief runs to many thousands.
 const HANDOFF_ENTRY: usize = 1500;
 
-/// A Claude Code session read back as a handoff: the messages Craft Anything sent and the text
+/// A Claude Code session read back as a handoff: the messages Anything Copy sent and the text
 /// the builder answered with, oldest first, leaving out tool calls, their results, thinking and
 /// side tasks. The newest are kept when it's longer than `max` characters.
 pub fn claude_handoff(saved: &str, max: usize) -> Option<String> {
@@ -747,7 +747,7 @@ pub fn claude_handoff(saved: &str, max: usize) -> Option<String> {
         match v.get("type").and_then(Value::as_str) {
             Some("user") => {
                 if let Some(t) = content.and_then(Value::as_str).filter(|t| !t.trim().is_empty()) {
-                    entries.push(format!("Craft Anything asked you: {}", clip(t)));
+                    entries.push(format!("Anything Copy asked you: {}", clip(t)));
                 }
             }
             Some("assistant") => {
@@ -1088,7 +1088,7 @@ fn remote_check(host: &str, stop: Option<&CancelToken>) -> Result<(), ToolError>
 /// Map the remote failure onto the fix, reusing the ssh failure wording other remote runs use.
 pub(super) fn remote_failure(host: &str, out: &craft_anything_platform::Output) -> ToolError {
     if let Some(failure) = crate::ssh::diagnose(host, "craft-anything-cli", crate::ssh::is_git_server(host), out.code, out.stderr_end_text().as_str()) {
-        return ToolError::new(ErrorCode::EngineMissing, format!("Craft Anything can't set up its tools on {host}: {}.", failure.what))
+        return ToolError::new(ErrorCode::EngineMissing, format!("Anything Copy can't set up its tools on {host}: {}.", failure.what))
             .with_remediation(failure.fix);
     }
     let end = out.end_text();
@@ -1096,7 +1096,7 @@ pub(super) fn remote_failure(host: &str, out: &craft_anything_platform::Output) 
     let n = trimmed.chars().count();
     let snippet: String = trimmed.chars().skip(n.saturating_sub(200)).collect();
     let exit = out.code.map_or_else(|| "it was stopped".to_string(), |code| format!("exit {code}"));
-    ToolError::new(ErrorCode::EngineMissing, format!("Craft Anything couldn't set up its tools on {host}: ssh didn't come back as expected ({exit})."))
+    ToolError::new(ErrorCode::EngineMissing, format!("Anything Copy couldn't set up its tools on {host}: ssh didn't come back as expected ({exit})."))
         .with_remediation(if snippet.is_empty() {
             "Check that craft-anything-cli is on the PATH this ssh session uses, and that the host lets you run programs over ssh.".to_string()
         } else {

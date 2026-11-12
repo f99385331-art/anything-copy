@@ -119,7 +119,7 @@ fn open_project(app: &mut CraftApp, folder: &std::path::Path) {
     }
 }
 
-/// Use the picked folder's files this way, unless something there is named like Craft Anything's
+/// Use the picked folder's files this way, unless something there is named like Anything Copy's
 /// own files: then the folder isn't used (nothing of theirs is ever replaced).
 fn choose(app: &mut CraftApp, choice: ExistingFiles) {
     let Some(folder) = app.state.make.folder.clone() else { return };
@@ -134,7 +134,7 @@ fn choose(app: &mut CraftApp, choice: ExistingFiles) {
         let names = clash.join(", ");
         app.toast(
             trf(
-                "That folder already has {names}, where Craft Anything keeps its own files. Pick another folder, or move those out first.",
+                "That folder already has {names}, where Anything Copy keeps its own files. Pick another folder, or move those out first.",
                 &[("names", &names)],
             ),
             true,
@@ -168,7 +168,7 @@ pub fn existing_modal(app: &mut CraftApp, ui: &mut Ui, close: &mut bool) {
             size,
             "code",
             "They're my app: edit them in place",
-            "The builder works on these files directly and keeps what works. Craft Anything adds a few records of its own beside them.",
+            "The builder works on these files directly and keeps what works. Anything Copy adds a few records of its own beside them.",
             current == Some(ExistingFiles::Edit),
         );
         if edit.clicked() {

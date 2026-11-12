@@ -10,13 +10,13 @@ use std::path::PathBuf;
 use std::time::Duration;
 
 /// Service name in the OS keychain.
-pub const SERVICE: &str = "ai.storyteller.craft-anything";
+pub const SERVICE: &str = "dev.murphy.anything-copy";
 /// Set to `1` to skip the OS keychain (tests, headless servers).
 pub const NO_KEYCHAIN_ENV: &str = "CRAFT_ANYTHING_NO_KEYCHAIN";
 /// The keychain can block (a locked desktop keyring); never wait longer than this.
 const KEYCHAIN_TIMEOUT: Duration = Duration::from_secs(3);
 
-const FILE_HEADER: &str = "# Craft Anything AI keys: FALLBACK STORE.\n# These keys are here because no OS keychain was available when they were saved.\n# This file is readable only by you (0600). Delete a line to forget a key.\n";
+const FILE_HEADER: &str = "# Anything Copy AI keys: FALLBACK STORE.\n# These keys are here because no OS keychain was available when they were saved.\n# This file is readable only by you (0600). Delete a line to forget a key.\n";
 
 /// Serializes every fallback-file read-modify-write, across backend names: two saves for different
 /// backends must not read the file together and overwrite each other's entry.
@@ -473,7 +473,7 @@ mod tests {
         assert_eq!(s.set("Claude", "sk-test").unwrap(), "file");
         assert_eq!(s.get("Claude").as_deref(), Some("sk-test"));
         let text = std::fs::read_to_string(dir.path().join("ai-keys.toml")).unwrap();
-        assert!(text.starts_with("# Craft Anything AI keys: FALLBACK STORE."));
+        assert!(text.starts_with("# Anything Copy AI keys: FALLBACK STORE."));
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt as _;

@@ -80,7 +80,7 @@ impl Viewer {
                 ui.set_max_width(ui.available_width().min(860.0));
                 ui.add_space(24.0);
                 ui.horizontal(|ui| {
-                    ui.label(RichText::new("Craft Anything").size(26.0).strong());
+                    ui.label(RichText::new("Anything Copy").size(26.0).strong());
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if ui.button(RichText::new("Open a file…").size(15.0)).clicked() {
                             (self.open)();
@@ -102,7 +102,7 @@ impl Viewer {
                 } else {
                     card(ui, |ui| {
                         ui.label(
-                            "Drop a program, app, library or any file here. Craft Anything tells you what it is, what it runs on and what it was made with.",
+                            "Drop a program, app, library or any file here. Anything Copy tells you what it is, what it runs on and what it was made with.",
                         );
                         ui.add_space(6.0);
                         ui.label(RichText::new("Everything happens in this page: your file is never uploaded.").color(TEXT_DIM));

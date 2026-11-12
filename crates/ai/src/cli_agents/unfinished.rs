@@ -1,5 +1,5 @@
 //! Agent sessions a turn has started, kept on disk while the turn runs (#1115). A turn that ends
-//! deletes its own unfinished session; this covers the turns that never got to: Craft Anything
+//! deletes its own unfinished session; this covers the turns that never got to: Anything Copy
 //! killed, crashed or uninstalled mid-turn. Each turn holds an OS lock on its record, which the
 //! system releases when the process ends, so a record nobody holds belongs to a turn that's gone,
 //! and [`sweep`] deletes its session. One file per turn, so turns never write each other's.
@@ -125,7 +125,7 @@ fn sweep_one(path: &Path, mut file: File, adapters: &AgentAdapters) -> Option<St
     match adapter.discard_unfinished(&entry.program, &entry.id, entry.host.as_deref()) {
         Ok(()) => {
             retire(&file, path);
-            Some(format!("Removed session {}{on}, left unfinished by a build Craft Anything didn't get to stop.", entry.id))
+            Some(format!("Removed session {}{on}, left unfinished by a build Anything Copy didn't get to stop.", entry.id))
         }
         Err(e) => {
             entry.tries += 1;

@@ -1,17 +1,15 @@
 <p align="center">
-  <a href="https://getartcraft.com/">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="docs/brand/artcraft-logo-white.svg">
-      <img alt="ArtCraft" src="docs/brand/artcraft-logo.svg" width="200">
-    </picture>
-  </a>
+  <img src="assets/app-icon/hicolor/256x256/apps/ai.storyteller.craft-anything.png" width="128" height="128" alt="Anything Copy icon">
 </p>
 
-<p align="center">
-  <img src="assets/app-icon/hicolor/256x256/apps/ai.storyteller.craft-anything.png" width="128" height="128" alt="Craft Anything icon: an engraved raven on a blue tile">
-</p>
+<h1 align="center">Anything Copy</h1>
 
-<h1 align="center">Craft Anything</h1>
+> **Anything Copy** is a fork of [Craft Anything](https://github.com/storytold/craft-anything) by the ArtCraft team.
+> ArtCraft and Craft Anything are names of their respective project — all rights belong to their owners.
+> Code stays MIT OR Apache-2.0; this fork ships its own icon and name. See docs/brand-note.md for the trademark boundary.
+>
+> **Migration note for existing users:** this fork stores API keys under a new keychain service name
+> (`dev.murphy.anything-copy`), so keys saved by an earlier build are not picked up — sign your keys in once again.
 
 <p align="center">
   <b>English</b> · <a href="README.ja.md">日本語</a> · <a href="README.zh.md">简体中文</a> · <a href="README.zh-hant.md">繁體中文</a> · <a href="README.ko.md">한국어</a> · <a href="README.es.md">Español</a> · <a href="README.fr.md">Français</a> · <a href="README.vi.md">Tiếng Việt</a> · <a href="README.pt.md">Português</a> · <a href="README.th.md">ไทย</a>
@@ -420,12 +418,11 @@ with its author, source and license in [ATTRIBUTION.md](ATTRIBUTION.md).
 The screenshots show sample projects made for them: example.com, a snake game and a small
 calculator program.
 
-The ArtCraft name, wordmark and logos in [`docs/brand/`](docs/brand/) are trademarks of the
-ArtCraft Team and are not covered by this license. They may be used only unmodified, and only as
-part of this repository and Craft Anything, under [`docs/brand/LICENSE-brand.txt`](docs/brand/LICENSE-brand.txt).
-Forks and modified versions must remove them.
+The ArtCraft name, wordmark and logos are trademarks of the ArtCraft Team and are not covered by
+this license. This fork has removed `docs/brand/` and ships its own name and icon; the boundary is
+explained in [docs/brand-note.md](docs/brand-note.md).
 
 <p align="center">
-  <a href="https://getartcraft.com/"><img alt="ArtCraft" src="docs/brand/artcraft-mark.svg" width="28"></a><br>
-  <sub>Made by the <a href="https://getartcraft.com/">ArtCraft</a> team and community.</sub>
+  <img alt="Anything Copy icon" src="assets/app-icon/hicolor/256x256/apps/ai.storyteller.craft-anything.png" width="28"><br>
+  <sub>Anything Copy — a fork of <a href="https://github.com/storytold/craft-anything">Craft Anything</a> by the ArtCraft team and community.</sub>
 </p>

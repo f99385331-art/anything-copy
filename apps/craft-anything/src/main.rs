@@ -1,4 +1,4 @@
-//! The Craft Anything desktop app.
+//! The Anything Copy desktop app.
 #![deny(clippy::unwrap_used, clippy::expect_used, clippy::panic, clippy::unimplemented, clippy::todo, clippy::unreachable)]
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -60,7 +60,7 @@ fn main() -> eframe::Result {
         Ok(false) => {}
         Err(e) => log::warn!("couldn't save the OpenCode Go session id: {e}"),
     }
-    // Sessions a turn left unfinished when Craft Anything was killed mid-turn (#1115): they are
+    // Sessions a turn left unfinished when Anything Copy was killed mid-turn (#1115): they are
     // otherwise swept at the next agent turn or on uninstall, and the agent's own service can
     // resume one in the meantime. Off this thread: a delete over SSH can wait on a host that's
     // away, and a start must not wait for it.
@@ -79,8 +79,8 @@ fn main() -> eframe::Result {
     log::info!("engine and AI ready; opening the window");
 
     let viewport = eframe::egui::ViewportBuilder::default()
-        .with_title("Craft Anything")
-        .with_app_id("ai.storyteller.craft-anything")
+        .with_title("Anything Copy")
+        .with_app_id("dev.murphy.anything-copy")
         .with_inner_size([1360.0, 860.0])
         .with_min_inner_size([760.0, 520.0])
         .with_resizable(true)
@@ -125,7 +125,7 @@ fn main() -> eframe::Result {
     // loop isn't retried; the app only reports the failure (below) and exits.
     let run = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         eframe::run_native(
-            "Craft Anything",
+            "Anything Copy",
             options,
             Box::new(move |cc| {
                 log::info!("window open");
@@ -173,7 +173,7 @@ fn main() -> eframe::Result {
             let retry = String::new();
             let _ = rfd::MessageDialog::new()
                 .set_level(rfd::MessageLevel::Error)
-                .set_title("Craft Anything couldn't open its window")
+                .set_title("Anything Copy couldn't open its window")
                 .set_description(format!(
                     "{e}\n\n{}{retry} What happened is written to {}; please attach it if you report this.",
                     graphics_advice(&e.to_string()),
@@ -315,7 +315,7 @@ fn pick_renderer(config: &std::path::Path, last_failed: bool) -> Option<renderer
 fn relaunch(args: &[String]) -> bool {
     let started = std::env::current_exe()
         .map_err(|e| e.to_string())
-        .and_then(|exe| craft_anything_platform::process::Launch::new(&exe).args(args).label("Craft Anything").start().map_err(|e| e.to_string()));
+        .and_then(|exe| craft_anything_platform::process::Launch::new(&exe).args(args).label("Anything Copy").start().map_err(|e| e.to_string()));
     if let Err(e) = &started {
         log::warn!("couldn't start again: {e}");
     }
