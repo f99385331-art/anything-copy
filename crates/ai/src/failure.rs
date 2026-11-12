@@ -89,6 +89,25 @@ impl TurnFailure {
     pub(crate) fn process_exit(code: Option<i32>) -> Self {
         Self::new(if code == Some(0) { FailureKind::Unknown } else { FailureKind::Transient })
     }
+
+    /// For an adapter with no protocol, the provider's own words carry typed tokens — HTTP
+    /// statuses and machine-readable error codes, not prose. Display language never decides:
+    /// only these tokens do, and a sentence that contains none stays unclassified (retrying an
+    /// unknown failure can spend quota without doing any work).
+    pub(crate) fn cli_words(text: &str) -> Option<Self> {
+        let m = text.to_ascii_lowercase();
+        if m.contains("allocated quota exceeded") || m.contains("429") || m.contains("rate limit") || m.contains("rate_limit") {
+            // A throttled minute clears by waiting; say so with a conservative bounded wait.
+            return Some(Self { kind: FailureKind::RateLimited, retry_after_secs: Some(60) });
+        }
+        if m.contains("insufficient_quota") || m.contains("credits exhausted") || m.contains("billing_error") || m.contains("payment required") {
+            return Some(Self::new(FailureKind::Billing));
+        }
+        if m.contains("invalid_api_key") || m.contains("authentication_error") || m.contains("unauthorized") {
+            return Some(Self::new(FailureKind::Authentication));
+        }
+        None
+    }
 }
 
 /// Compatibility for a provider's display-only wait hint, after a typed status already made
@@ -174,5 +193,25 @@ mod tests {
         for text in ["retry after NaN", "retry after inf", "retry after -1s", "invalid command", "please retry in a moment", "retry in ."] {
             assert_eq!(retry_after(text), None);
         }
+    }
+
+    #[test]
+    fn a_throttled_minute_waits_and_a_depleted_account_stops() {
+        // The real 2026-11-10 message: wrapped as "billing exhausted" but it was a TPM throttle.
+        let throttled = TurnFailure::cli_words(
+            "Billing or credits exhausted: HTTP 429: Allocated quota exceeded, please increase your quota limit.",
+        )
+        .unwrap();
+        assert_eq!(throttled.kind, FailureKind::RateLimited);
+        assert_eq!(throttled.retry_after_secs, Some(60));
+        assert!(throttled.retryable());
+        let depleted = TurnFailure::cli_words("Error: insufficient_quota: your monthly allowance is used up.").unwrap();
+        assert_eq!(depleted.kind, FailureKind::Billing);
+        assert!(!depleted.retryable(), "re-sending a refusal cannot mint quota");
+        // Prose in any language without a typed token decides nothing and keeps the old fallback.
+        assert_eq!(TurnFailure::cli_words("构建失败：两个测试没有通过"), None);
+        assert_eq!(TurnFailure::cli_words("the agent exited oddly"), None);
+        let key = TurnFailure::cli_words("HTTP 401 with code invalid_api_key").unwrap();
+        assert_eq!(key.kind, FailureKind::Authentication);
     }
 }

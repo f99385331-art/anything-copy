@@ -1194,8 +1194,17 @@ fn run_cli(spec: &CliSpec, text: &str, retry: bool, tx: &Sender<AgentEvent>, sto
     let ended_after_result = p.saw_result && matches!(result.as_ref().err().map(|e| e.code), Some(ErrorCode::Cancelled) | Some(ErrorCode::TimedOut));
     if p.failure.is_none() {
         let failed = match &result {
-            Ok(out) if !out.success => Some(TurnFailure::process_exit(out.code)),
-            Err(e) if e.code != ErrorCode::Cancelled && !ended_after_result => Some(TurnFailure::from_process(e)),
+            // An adapter with no protocol says why only in the provider's words: read the typed
+            // tokens from them before the exit code, which would otherwise retry a refusal
+            // forever (a throttled minute waits, a depleted account stops and says so).
+            Ok(out) if !out.success => Some(
+                TurnFailure::cli_words(&String::from_utf8_lossy(&out.stderr))
+                    .or_else(|| TurnFailure::cli_words(&String::from_utf8_lossy(&out.stdout)))
+                    .unwrap_or_else(|| TurnFailure::process_exit(out.code)),
+            ),
+            Err(e) if e.code != ErrorCode::Cancelled && !ended_after_result => {
+                Some(TurnFailure::cli_words(&e.message).unwrap_or_else(|| TurnFailure::from_process(e)))
+            }
             _ => None,
         };
         *failure.lock().unwrap_or_else(PoisonError::into_inner) = failed;
