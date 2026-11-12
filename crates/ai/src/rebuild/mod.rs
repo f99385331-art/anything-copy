@@ -44,6 +44,7 @@ mod check;
 pub mod feed;
 mod kept_check;
 pub mod kinds;
+pub mod lease;
 mod locate;
 pub mod notes;
 mod output;

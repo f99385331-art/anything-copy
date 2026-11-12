@@ -41,6 +41,10 @@ pub struct RunSet {
     queue: VecDeque<(Workspace, RunOptions, bool)>,
     /// The latest run to start, if it had to work alone; nothing else starts while it's working.
     alone: Option<PathBuf>,
+    /// Each working project's cross-process lease; held until its run says Finished, dropped when
+    /// the set dies. The in-process dedup above cannot see a second Craft, or one restarted
+    /// while a turn kept working inside an agent's own gateway (2026-11-10).
+    leases: HashMap<PathBuf, lease::Lease>,
     starter: Starter,
     /// A [`keep_queue_moving`] thread is looking after the queue.
     watched: bool,
@@ -66,7 +70,7 @@ impl std::fmt::Debug for RunSet {
 impl RunSet {
     /// At most `limit` runs work at once (at least one).
     pub fn new(limit: usize) -> RunSet {
-        RunSet { limit: limit.max(1), runs: HashMap::new(), queue: VecDeque::new(), alone: None, starter: Box::new(RebuildRun::start), watched: false }
+        RunSet { limit: limit.max(1), runs: HashMap::new(), queue: VecDeque::new(), alone: None, leases: HashMap::new(), starter: Box::new(RebuildRun::start), watched: false }
     }
 
     /// A run may start now: there's a place, and neither it nor anyone working needs to be alone.
@@ -101,9 +105,28 @@ impl RunSet {
         }
         let alone = must_work_alone(hub, &ws, &opts);
         if self.queue.is_empty() && self.has_room(alone) {
+            // Our own kept entry (a finished run nobody polled yet) yields before the ask;
+            // any OTHER live lease then honestly holds the floor.
             let root = ws.root.clone();
-            let run = (self.starter)(hub, ws, opts)?;
+            if let Some(mut old) = self.leases.remove(&root) {
+                old.defuse();
+            }
+            // Take the cross-process lease before anything of the person's message is spent.
+            let lease = match lease::Lease::acquire(&ws.root) {
+                Ok(l) => l,
+                Err((holder, remediation)) => {
+                    return Err(ToolError::new(ErrorCode::BadInput, holder).with_remediation(remediation));
+                }
+            };
+            let run = match (self.starter)(hub, ws, opts) {
+                Ok(run) => run,
+                Err(e) => {
+                    drop(lease);
+                    return Err(e);
+                }
+            };
             self.alone = alone.then(|| root.clone());
+            self.leases.insert(root.clone(), lease);
             self.runs.insert(root, run);
             return Ok(Started::Running);
         }
@@ -118,8 +141,21 @@ impl RunSet {
     /// free. A queued run that can't start gives a `Finished { ok: false }` with the reason.
     pub fn poll(&mut self, hub: &AiHub) -> Vec<(PathBuf, RunEvent)> {
         let mut out: Vec<(PathBuf, RunEvent)> = Vec::new();
+        let mut done: Vec<PathBuf> = Vec::new();
         for (root, run) in &mut self.runs {
-            out.extend(run.poll().into_iter().map(|e| (root.clone(), e)));
+            let events = run.poll();
+            if events.iter().any(|e| matches!(e, RunEvent::Finished { .. })) {
+                // Its say-so arrived: hand the project back before the event goes out.
+                done.push(root.clone());
+            } else if run.is_running() {
+                if let Some(l) = self.leases.get_mut(root) {
+                    l.heartbeat();
+                }
+            }
+            out.extend(events.into_iter().map(|e| (root.clone(), e)));
+        }
+        for root in done {
+            self.leases.remove(&root);
         }
         while self.queue.front().is_some_and(|(_, _, alone)| self.has_room(*alone)) {
             let Some((ws, opts, _)) = self.queue.pop_front() else { break };
@@ -131,12 +167,29 @@ impl RunSet {
             }
             let root = ws.root.clone();
             let mut keep = ws.clone();
+            // A queued run takes the lease only when it actually starts; held elsewhere, it ends
+            // here with the reason rather than sitting on the queue forever.
+            let lease = match lease::Lease::acquire(&keep.root) {
+                Ok(l) => l,
+                Err((holder, remediation)) => {
+                    let e = ToolError::new(ErrorCode::BadInput, holder).with_remediation(remediation);
+                    let message = e.for_people();
+                    let _ = keep.set_status(Status::NeedsYou, message.clone());
+                    out.push((root, RunEvent::Finished { ok: false, message, paused: false }));
+                    continue;
+                }
+            };
             match (self.starter)(hub, ws, opts) {
                 Ok(run) => {
                     self.alone = alone.then(|| root.clone());
+                    if let Some(mut old) = self.leases.remove(&root) {
+                        old.defuse();
+                    }
+                    self.leases.insert(root.clone(), lease);
                     self.runs.insert(root, run);
                 }
                 Err(e) => {
+                    drop(lease);
                     let message = e.for_people();
                     let _ = keep.set_status(Status::NeedsYou, message.clone());
                     out.push((root, RunEvent::Finished { ok: false, message, paused: false }));
