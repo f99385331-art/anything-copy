@@ -455,6 +455,7 @@ fn notes_added_while_it_works_reach_the_agent_at_its_next_step() {
         assets: false,
         usage: None,
         self_check: None,
+        agent_attempts: 0,
         reset_progress_after_notes: false,
     };
     assert!(w.added(&mut ws, true, true).is_none(), "nothing added, nothing to say");
@@ -779,6 +780,37 @@ mod typed_retries {
             .unwrap_err();
         assert_eq!(error.code, ErrorCode::Cancelled);
         assert_eq!(agent.sent.len(), 1);
+    }
+
+    /// The 2026-11-10 all-nighter: the retry loop bounded each turn, but nothing bounded the run,
+    /// and turn-level deaths entered no counter at all. The run now fuses at its session budget,
+    /// and the person's next message — their voice in the room — makes room again.
+    #[test]
+    fn a_run_fuses_at_its_session_budget_and_a_new_request_makes_room_again() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut ws = Workspace::create(dir.path(), "x", "Build a thing", TargetRef::None).unwrap();
+        let mut worker = check_worker(&ws, false);
+        let failure = TurnFailure::new(FailureKind::Transient);
+        let mut agent = FailingConversation::new(vec![Some(failure); MAX_SESSIONS_PER_RUN + 8], false);
+        let mut fused = None;
+        for _ in 0..MAX_SESSIONS_PER_RUN {
+            match worker.turn_with_wait(&mut ws, &mut agent, "Build it", true, None, |_, _| Ok(())) {
+                Err(e) if e.message.contains("builder conversations") => {
+                    fused = Some(e);
+                    break;
+                }
+                _ => {}
+            }
+        }
+        let error = fused.expect("the run fuses at its budget");
+        assert_eq!(error.code, ErrorCode::OverLimit);
+        assert_eq!(agent.sent.len(), MAX_SESSIONS_PER_RUN, "not one conversation past the wall");
+        // The reset rides the same hook that reopens the unchanged-turn allowance.
+        worker.reset_progress_after_notes = true;
+        worker.progress_after_notes(&ws).unwrap();
+        let mut after = FailingConversation::new([None], false);
+        assert_eq!(worker.turn_with_wait(&mut ws, &mut after, "Build it", true, None, |_, _| Ok(())).unwrap(), "Done");
+        assert_eq!(after.sent.len(), 1, "a new message starts the budget fresh");
     }
 
     #[test]
@@ -1366,6 +1398,7 @@ fn an_api_backend_builds_with_the_build_tools() {
         assets: false,
         usage: None,
         self_check: None,
+        agent_attempts: 0,
         reset_progress_after_notes: false,
     };
     w.attach(&ws).unwrap();
@@ -1494,6 +1527,7 @@ fn the_mechanics_sheet_is_required_without_claiming_effective_behavior() {
         assets: false,
         usage: None,
         self_check: None,
+        agent_attempts: 0,
         reset_progress_after_notes: false,
     };
     let check = |round| w.run_checks(&ws, &SheetKind, round).unwrap().remove(0);
@@ -2791,6 +2825,7 @@ fn check_worker(ws: &Workspace, deep: bool) -> Worker {
         assets: false,
         usage: None,
         self_check: None,
+        agent_attempts: 0,
         reset_progress_after_notes: false,
         keys: crate::KeyStore::file_only(ws.root.join("keys.toml")),
         kept_checks: Mutex::default(),
@@ -3386,6 +3421,7 @@ fn preparing_the_builders_agent_does_not_lock_up() {
         assets: false,
         usage: None,
         self_check: None,
+        agent_attempts: 0,
         reset_progress_after_notes: false,
     };
     let entry = crate::BackendEntry {
@@ -3429,6 +3465,7 @@ fn the_run_answers_the_builders_own_check_during_its_turn() {
         assets: false,
         usage: None,
         self_check: Some((Arc::new(SheetKind), 90.0)),
+        agent_attempts: 0,
         reset_progress_after_notes: false,
     };
     let mut builder = ChecksItsWork { root: ws.root.clone(), asked: None, reply: None };
@@ -3468,6 +3505,7 @@ fn a_stopped_build_answers_the_check_it_took() {
         assets: false,
         usage: None,
         self_check: Some((Arc::new(SheetKind), 90.0)),
+        agent_attempts: 0,
         reset_progress_after_notes: false,
     };
     let asks = Inbox::new(self_check::asks_dir(&ws.root));
@@ -3529,6 +3567,7 @@ fn decompiling_once_is_remembered_by_the_project() {
         assets: false,
         usage: None,
         self_check: None,
+        agent_attempts: 0,
         reset_progress_after_notes: false,
     };
     let mut builder = Decompiles { events: Vec::new() };
@@ -3741,6 +3780,7 @@ fn a_note_the_builder_took_at_a_step_joins_the_feed_and_isnt_sent_again() {
         assets: false,
         usage: None,
         self_check: None,
+        agent_attempts: 0,
         reset_progress_after_notes: false,
     };
     let dir = notes::notes_dir(&ws.inbox_dir());
@@ -4148,6 +4188,7 @@ fn a_session_left_on_another_computer_starts_a_new_one_from_the_project() {
         assets: false,
         usage: None,
         self_check: None,
+        agent_attempts: 0,
         reset_progress_after_notes: false,
     };
     let first = resumed_elsewhere("THE BRIEF", &ws.manifest.last_reply, None);
@@ -4204,6 +4245,7 @@ fn a_missing_session_with_nothing_to_start_from_is_said_plainly() {
         assets: false,
         usage: None,
         self_check: None,
+        agent_attempts: 0,
         reset_progress_after_notes: false,
     };
     let e = w
@@ -4271,6 +4313,7 @@ fn the_builders_conversation_travels_with_the_project() {
         assets: false,
         usage: None,
         self_check: None,
+        agent_attempts: 0,
         reset_progress_after_notes: false,
     };
     let adapter = KeepsSessions(store.path().to_path_buf());
@@ -4349,6 +4392,7 @@ fn a_build_says_when_it_waits_for_an_analysis_started_earlier() {
         assets: false,
         usage: None,
         self_check: None,
+        agent_attempts: 0,
         reset_progress_after_notes: false,
     };
 
@@ -4411,6 +4455,7 @@ fn a_later_run_opens_the_projects_program_again_for_the_builder() {
             assets: false,
             usage: None,
             self_check: None,
+            agent_attempts: 0,
             reset_progress_after_notes: false,
         };
         w.reopen_target(&mut ws, app.as_ref(), true, deep).unwrap();

@@ -340,6 +340,7 @@ impl RebuildRun {
             assets: false,
             usage: Some(UsageClock { root: root.clone(), since: Instant::now() }),
             self_check: None,
+            agent_attempts: 0,
             reset_progress_after_notes: false,
             keys: hub.keys.clone(),
             kept_checks: Mutex::default(),
@@ -547,6 +548,10 @@ struct Worker {
     usage: Option<UsageClock>,
     /// The kind and bar the builder's own checks (`rebuild_check`) are judged by, once known.
     self_check: Option<(Arc<dyn kinds::TargetKind>, f64)>,
+    /// Builder conversations asked for so far, counted across turns and retries against
+    /// MAX_SESSIONS_PER_RUN. A provider retry loop bounded each turn, but nothing bounded the run
+    /// (2026-11-10), and a note from the person — their voice in the room — starts the budget fresh.
+    agent_attempts: usize,
     /// A hook consumed a new request; persist its reset only after the builder finishes.
     reset_progress_after_notes: bool,
     /// The backends' stored keys, for an agent CLI that asks the host to authenticate (Devin).
@@ -1118,6 +1123,9 @@ impl Worker {
             progress.reset();
             progress.save(&ws.root)?;
             self.reset_progress_after_notes = false;
+            // The person's voice in the room reopens every allowance there is: the unchanged-turn
+            // count above, and this run's conversation budget too (2026-11-10 fuse).
+            self.agent_attempts = 0;
         }
         Ok(progress)
     }
@@ -1262,6 +1270,10 @@ impl Worker {
         let mut tries = 0u64;
         let mut retry = false;
         loop {
+            if self.agent_attempts >= MAX_SESSIONS_PER_RUN {
+                return Err(session_budget(MAX_SESSIONS_PER_RUN));
+            }
+            self.agent_attempts += 1;
             let result = self.converse_turn(ws, agent, &prompt, retry);
             let lost = result.is_err() && agent.session_lost();
             if lost {
@@ -1469,6 +1481,22 @@ fn run_outcome(result: Result<Result<String, ToolError>, Box<dyn std::any::Any +
 /// request. Each "Try again" used to start another `max_rounds` of checks, with nothing counting
 /// across runs, so a build that never came up was checked 40 and 49 times (#736).
 pub const NOT_WORKING_CHECK_LIMIT: u32 = 10;
+
+/// Agent conversations one run may ask for before it stops and asks for a new request. The retry
+/// loop bounds each turn at 1+3 attempts, but nothing counted across turns: on 2026-11-10 a run
+/// rode rate-limited minutes all night and spent 32 whole builder conversations of a month's
+/// quota while nobody was watching, because a turn-level death entered no counter at all. 40 is
+/// generous room for a hard build that genuinely keeps working, and a wall against one that
+/// keeps failing the same way. A new message from the person starts a fresh run — and budget.
+pub const MAX_SESSIONS_PER_RUN: usize = 40;
+
+fn session_budget(ran: usize) -> ToolError {
+    ToolError::new(
+        ErrorCode::OverLimit,
+        format!("This build has already had its {ran} builder conversations without getting further, so it stopped before another."),
+    )
+    .with_remediation("If something keeps failing, say what to change: your next message starts again with room to work.")
+}
 
 fn not_working(ws: &Workspace) -> ToolError {
     ToolError::new(ErrorCode::OverLimit, format!("The build still isn't working after {} checks in a row, so it stopped.", ws.manifest.not_working_checks))
