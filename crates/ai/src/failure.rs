@@ -43,8 +43,14 @@ impl TurnFailure {
         let provider = error.details.as_ref().and_then(|d| d.get("provider_error")).and_then(serde_json::Value::as_str);
         // A request too long for the server's context is refused the same way however often it's sent.
         let overflow = error.details.as_ref().and_then(|d| d.get("context_overflow")).and_then(serde_json::Value::as_bool) == Some(true);
+        // Alibaba's Token Plan words a per-minute throttle with the OpenAI code that otherwise
+        // means an empty account (2026-11-10, 2026-11-12 dumps: 429 + `insufficient_quota` +
+        // "Allocated quota exceeded"). That phrase is the provider's own throttle token, and only
+        // it earns priority — an OpenAI billing stop keeps its verdict with its different words.
+        let allocated = error.message.to_ascii_lowercase().contains("allocated quota exceeded");
         let kind = match (status, provider) {
             _ if overflow => FailureKind::Configuration,
+            (Some(429), _) if allocated => FailureKind::RateLimited,
             (Some(401 | 403), _) | (_, Some("authentication_error" | "permission_error" | "invalid_api_key")) => FailureKind::Authentication,
             (Some(402), _) | (_, Some("billing_error" | "insufficient_quota")) => FailureKind::Billing,
             (Some(429), _) | (_, Some("rate_limit_error" | "rate_limit_exceeded")) => FailureKind::RateLimited,
@@ -198,10 +204,7 @@ mod tests {
     #[test]
     fn a_throttled_minute_waits_and_a_depleted_account_stops() {
         // The real 2026-11-10 message: wrapped as "billing exhausted" but it was a TPM throttle.
-        let throttled = TurnFailure::cli_words(
-            "Billing or credits exhausted: HTTP 429: Allocated quota exceeded, please increase your quota limit.",
-        )
-        .unwrap();
+        let throttled = TurnFailure::cli_words("Billing or credits exhausted: HTTP 429: Allocated quota exceeded, please increase your quota limit.").unwrap();
         assert_eq!(throttled.kind, FailureKind::RateLimited);
         assert_eq!(throttled.retry_after_secs, Some(60));
         assert!(throttled.retryable());
@@ -213,5 +216,21 @@ mod tests {
         assert_eq!(TurnFailure::cli_words("the agent exited oddly"), None);
         let key = TurnFailure::cli_words("HTTP 401 with code invalid_api_key").unwrap();
         assert_eq!(key.kind, FailureKind::Authentication);
+    }
+
+    #[test]
+    fn the_provider_cannot_take_its_throttle_words_back_to_the_billing_arm() {
+        // The exact 2026-11-12 22:03 dump: HTTP 429, code insufficient_quota (OpenAI's empty-account
+        // word), message "Allocated quota exceeded". The phrase makes it a throttle; the code alone
+        // would have read as an empty account and frozen a healthy minute.
+        let ali = ToolError::new(ErrorCode::OverLimit, "Allocated quota exceeded, please increase your quota limit.")
+            .with_details(json!({"status": 429, "provider_error": "insufficient_quota"}));
+        assert_eq!(TurnFailure::from_api(&ali).kind, FailureKind::RateLimited);
+        assert!(TurnFailure::from_api(&ali).retryable());
+        // An OpenAI empty account — same code, none of Alibaba's throttle words — still stops.
+        let openai = ToolError::new(ErrorCode::OverLimit, "You exceeded your current quota, please check your plan and billing details.")
+            .with_details(json!({"status": 429, "provider_error": "insufficient_quota"}));
+        assert_eq!(TurnFailure::from_api(&openai).kind, FailureKind::Billing);
+        assert!(!TurnFailure::from_api(&openai).retryable());
     }
 }
