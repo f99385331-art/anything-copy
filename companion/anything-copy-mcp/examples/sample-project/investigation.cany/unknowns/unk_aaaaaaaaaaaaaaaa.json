@@ -1,0 +1,14 @@
+{
+ "id": "unk_aaaaaaaaaaaaaaaa",
+ "revision": 1,
+ "question": "Which exact font files does the original serve at 390px?",
+ "severity": "medium",
+ "domain": "typography",
+ "status": "open",
+ "probes": [
+  "fetch CSS at mobile width"
+ ],
+ "evidence_for": [],
+ "evidence_against": [],
+ "resolution": null
+}

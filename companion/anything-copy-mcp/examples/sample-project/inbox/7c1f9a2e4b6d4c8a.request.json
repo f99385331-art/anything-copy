@@ -1,0 +1,13 @@
+{
+ "id": "7c1f9a2e4b6d4c8a",
+ "kind": "approval",
+ "title": "Run `npm install` in app/ for the first time?",
+ "detail": "Installing dependencies executes package scripts on your computer.",
+ "choices": [
+  "allow",
+  "refuse"
+ ],
+ "allow_text": false,
+ "action": "bash:npm",
+ "created_ms": 1794330000000
+}
