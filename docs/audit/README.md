@@ -1,6 +1,6 @@
 # 审计与改动记录（docs/audit）
 
-本目录收录 Anything Copy 对上游 Craft Anything（基线 `adeddc9`）的完整审计与改动轨迹。
+本目录收录 Anything Copy 代码库的完整审计与改动轨迹（基线 commit `adeddc9`，2026-11-11）。
 
 | 文件 | 内容 |
 |---|---|
