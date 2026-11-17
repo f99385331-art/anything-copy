@@ -492,10 +492,10 @@ mod tests {
     use super::workspace_root;
 
     #[test]
-    fn readme_status_does_not_list_first_public_release_as_next() {
+    fn readme_roadmap_does_not_list_first_public_release_as_next() {
         let readme = std::fs::read_to_string(workspace_root().join("README.md")).unwrap();
-        let status = readme.split("\n## Status").nth(1).unwrap();
-        let status = status.split("\n**Responsible use.**").next().unwrap().replace("\n> ", " ");
-        assert!(!status.contains("**Next:** the first public release"), "{status}");
+        let roadmap = readme.split("\n## 路线图").nth(1).unwrap();
+        let next = roadmap.lines().find(|line| line.starts_with("- v")).unwrap();
+        assert!(next.starts_with("- v0.2"), "{roadmap}");
     }
 }
