@@ -296,16 +296,15 @@ fn find_cli() -> Option<PathBuf> {
         if exe.file_name().is_some_and(|n| n == name.as_str()) {
             return Some(exe);
         }
+        // Walk up from the executable: beside it for an installed app, one level up
+        // for a test binary in target/<profile>/deps, and further up for one in a
+        // build script's out/ dir, where test binaries land.
         if let Some(dir) = exe.parent() {
-            let sib = dir.join(&name);
-            if is_executable(&sib) {
-                return Some(sib);
-            }
-            // test binaries live in target/<profile>/deps; the CLI is one level up
-            if let Some(up) = dir.parent().map(|d| d.join(&name))
-                && is_executable(&up)
-            {
-                return Some(up);
+            for ancestor in dir.ancestors().take(8) {
+                let sib = ancestor.join(&name);
+                if is_executable(&sib) {
+                    return Some(sib);
+                }
             }
         }
     }
