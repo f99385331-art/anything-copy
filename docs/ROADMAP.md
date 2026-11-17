@@ -323,7 +323,7 @@ only when it's green and a maintainer has fully reviewed it, code as well as wor
       `cargo clippy --workspace --all-targets -D warnings` reports 5 `collapsible_if` errors in
       `crates/ai/src/rebuild/lease.rs:37, 74, 75, 92` and `crates/ai/src/rebuild/runs.rs:158`
       (150 before the format fix). Fix the formatting and collapse the nested `if`s.
-  — claimed: 圆圆酱🧊, branch bugfix/r5.2-ci-gate-fmt-clippy-2
+  — claimed: 圆圆酱🧊, branch bugfix/r5.2-ci-gate-fmt-clippy-2 — in PR #3
 
 ### R5.3 A builder that can't make progress stops
 Owner: open · Status: todo
