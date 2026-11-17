@@ -317,7 +317,7 @@ only when it's green and a maintainer has fully reviewed it, code as well as wor
       and the translation PR empties the list
       — claimed: tanish2k09, branch chore/r5.2-awaiting-translation
 - [ ] FreeBSD nightly (`freebsd.yml`) fails on x86_64 with exit 101: `cargo test --workspace --locked` fails three tests on `main` — two `craft-anything-ai` rebuild tests can't find the built `craft-anything-cli` (test binaries run from `target/<profile>/build/<crate>-<hash>/out/`, not `deps/`), and the xtask README test expects a "## Status" section the rewritten README no longer has. Fix the CLI lookup and the README test.
-  — claimed: 圆圆酱🧊, branch bugfix/r5.2-freebsd-nightly-tests
+  — claimed: 圆圆酱🧊, branch bugfix/r5.2-freebsd-nightly-tests — in PR #1
 
 ### R5.3 A builder that can't make progress stops
 Owner: open · Status: todo
