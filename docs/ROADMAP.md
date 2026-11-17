@@ -318,6 +318,12 @@ only when it's green and a maintainer has fully reviewed it, code as well as wor
       — claimed: tanish2k09, branch chore/r5.2-awaiting-translation
 - [ ] FreeBSD nightly (`freebsd.yml`) fails on x86_64 with exit 101: `cargo test --workspace --locked` fails three tests on `main` — two `craft-anything-ai` rebuild tests can't find the built `craft-anything-cli` (test binaries run from `target/<profile>/build/<crate>-<hash>/out/`, not `deps/`), and the xtask README test expects a "## Status" section the rewritten README no longer has. Fix the CLI lookup and the README test.
   — claimed: 圆圆酱🧊, branch bugfix/r5.2-freebsd-nightly-tests — in PR #1
+- [ ] CI gate (`cargo xtask ci`) fails on `main`: `cargo fmt --all --check` fails on
+      `crates/ai/src/cli_agents/mod.rs:395` and `crates/ai/src/rebuild/runs.rs:70`, and
+      `cargo clippy --workspace --all-targets -D warnings` reports 5 `collapsible_if` errors in
+      `crates/ai/src/rebuild/lease.rs:37, 74, 75, 92` and `crates/ai/src/rebuild/runs.rs:158`
+      (150 before the format fix). Fix the formatting and collapse the nested `if`s.
+  — claimed: 圆圆酱🧊, branch bugfix/r5.2-ci-gate-fmt-clippy-2
 
 ### R5.3 A builder that can't make progress stops
 Owner: open · Status: todo
