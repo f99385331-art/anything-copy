@@ -316,6 +316,13 @@ only when it's green and a maintainer has fully reviewed it, code as well as wor
       translations: `cargo xtask i18n-coverage` accepts strings listed as awaiting translation,
       and the translation PR empties the list
       — claimed: tanish2k09, branch chore/r5.2-awaiting-translation
+- [ ] CI gate (`cargo xtask ci`) fails on `main`: `cargo fmt --all --check` fails on
+      `crates/ai/src/cli_agents/mod.rs:395` and `crates/ai/src/rebuild/runs.rs:70`, and
+      `cargo clippy --workspace --all-targets -D warnings` reports 5 `collapsible_if` errors in
+      `crates/ai/src/rebuild/lease.rs:37, 74, 75, 92` and `crates/ai/src/rebuild/runs.rs:150`.
+      Fix the formatting and collapse the nested `if`s (line numbers as measured before the
+      format fix; they may shift after it).
+  — claimed: 圆圆酱🧊, branch bugfix/r5.2-ci-gate-fmt-clippy
 
 ### R5.3 A builder that can't make progress stops
 Owner: open · Status: todo
