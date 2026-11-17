@@ -34,17 +34,17 @@ impl Lease {
     /// each other, not disk faults.
     pub fn acquire(root: &Path) -> Result<Lease, (String, String)> {
         let path = Self::file(root);
-        if let Ok(body) = fs::read_to_string(&path) {
-            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&body) {
-                let at = v.get("at_ms").and_then(|x| x.as_u64()).unwrap_or(0);
-                let pid = v.get("pid").and_then(|x| x.as_u64()).unwrap_or(0);
-                let silent = now_ms().saturating_sub(at);
-                if silent < STALE.as_millis() as u64 {
-                    return Err((
-                        format!("Another builder holds this project: process {pid}, last seen {} seconds ago.", silent / 1000),
-                        "Stop that build first, or wait until its lease lapses.".to_string(),
-                    ));
-                }
+        if let Ok(body) = fs::read_to_string(&path)
+            && let Ok(v) = serde_json::from_str::<serde_json::Value>(&body)
+        {
+            let at = v.get("at_ms").and_then(|x| x.as_u64()).unwrap_or(0);
+            let pid = v.get("pid").and_then(|x| x.as_u64()).unwrap_or(0);
+            let silent = now_ms().saturating_sub(at);
+            if silent < STALE.as_millis() as u64 {
+                return Err((
+                    format!("Another builder holds this project: process {pid}, last seen {} seconds ago.", silent / 1000),
+                    "Stop that build first, or wait until its lease lapses.".to_string(),
+                ));
             }
         }
         let lease = Lease { path, touched: Instant::now() };
@@ -71,12 +71,11 @@ impl Lease {
     /// Let a deliberately replaced lease go: take back our own file first (only if it is still
     /// ours), then forget the path, so the replacement can acquire and our Drop harms nothing.
     pub fn defuse(&mut self) {
-        if !self.path.as_os_str().is_empty() {
-            if let Ok(body) = fs::read_to_string(&self.path) {
-                if body.contains(&format!("\"pid\":{}", std::process::id())) {
-                    let _ = fs::remove_file(&self.path);
-                }
-            }
+        if !self.path.as_os_str().is_empty()
+            && let Ok(body) = fs::read_to_string(&self.path)
+            && body.contains(&format!("\"pid\":{}", std::process::id()))
+        {
+            let _ = fs::remove_file(&self.path);
         }
         self.path = PathBuf::new();
     }
@@ -89,10 +88,10 @@ impl Drop for Lease {
         }
         // Only take away a lease that is still ours (a newer holder took the floor while ours
         // lapsed); a replacement from this same process is defused before it gets here.
-        if let Ok(body) = fs::read_to_string(&self.path) {
-            if body.contains(&format!("\"pid\":{}", std::process::id())) {
-                let _ = fs::remove_file(&self.path);
-            }
+        if let Ok(body) = fs::read_to_string(&self.path)
+            && body.contains(&format!("\"pid\":{}", std::process::id()))
+        {
+            let _ = fs::remove_file(&self.path);
         }
     }
 }

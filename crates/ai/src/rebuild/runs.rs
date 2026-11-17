@@ -70,7 +70,15 @@ impl std::fmt::Debug for RunSet {
 impl RunSet {
     /// At most `limit` runs work at once (at least one).
     pub fn new(limit: usize) -> RunSet {
-        RunSet { limit: limit.max(1), runs: HashMap::new(), queue: VecDeque::new(), alone: None, leases: HashMap::new(), starter: Box::new(RebuildRun::start), watched: false }
+        RunSet {
+            limit: limit.max(1),
+            runs: HashMap::new(),
+            queue: VecDeque::new(),
+            alone: None,
+            leases: HashMap::new(),
+            starter: Box::new(RebuildRun::start),
+            watched: false,
+        }
     }
 
     /// A run may start now: there's a place, and neither it nor anyone working needs to be alone.
@@ -147,10 +155,10 @@ impl RunSet {
             if events.iter().any(|e| matches!(e, RunEvent::Finished { .. })) {
                 // Its say-so arrived: hand the project back before the event goes out.
                 done.push(root.clone());
-            } else if run.is_running() {
-                if let Some(l) = self.leases.get_mut(root) {
-                    l.heartbeat();
-                }
+            } else if run.is_running()
+                && let Some(l) = self.leases.get_mut(root)
+            {
+                l.heartbeat();
             }
             out.extend(events.into_iter().map(|e| (root.clone(), e)));
         }
