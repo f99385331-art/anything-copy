@@ -319,10 +319,9 @@ only when it's green and a maintainer has fully reviewed it, code as well as wor
 - [ ] CI gate (`cargo xtask ci`) fails on `main`: `cargo fmt --all --check` fails on
       `crates/ai/src/cli_agents/mod.rs:395` and `crates/ai/src/rebuild/runs.rs:70`, and
       `cargo clippy --workspace --all-targets -D warnings` reports 5 `collapsible_if` errors in
-      `crates/ai/src/rebuild/lease.rs:37, 74, 75, 92` and `crates/ai/src/rebuild/runs.rs:150`.
-      Fix the formatting and collapse the nested `if`s (line numbers as measured before the
-      format fix; they may shift after it).
-  — claimed: 圆圆酱🧊, branch bugfix/r5.2-ci-gate-fmt-clippy
+      `crates/ai/src/rebuild/lease.rs:37, 74, 75, 92` and `crates/ai/src/rebuild/runs.rs:158`
+      (150 before the format fix). Fix the formatting and collapse the nested `if`s.
+  — claimed: 圆圆酱🧊, branch bugfix/r5.2-ci-gate-fmt-clippy — in PR #2
 
 ### R5.3 A builder that can't make progress stops
 Owner: open · Status: todo
