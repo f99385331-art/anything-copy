@@ -395,7 +395,10 @@ pub(crate) fn argv_budget(program: &str, args: &[String]) -> Result<(), (String,
         return Ok(());
     }
     Err((
-        format!("That message is too long for your computer to start {program} with: it needs {len} of the {} characters a command line can hold.", CMDLINE_LIMIT),
+        format!(
+            "That message is too long for your computer to start {program} with: it needs {len} of the {} characters a command line can hold.",
+            CMDLINE_LIMIT
+        ),
         "Send a shorter message, or let the details come from a file in the project instead of from the message.".to_string(),
     ))
 }
